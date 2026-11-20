@@ -1,0 +1,152 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-display: 'Cairo', sans-serif;
+    --font-sans: 'IBM Plex Sans Arabic', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  .font-mono, code, pre {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+html, body {
+  overflow-x: hidden;
+}
+
+/* Ensure KaTeX formulas stay strictly LTR inside Arabic RTL paragraphs and scroll cleanly on mobile */
+.katex, .katex-display {
+  direction: ltr;
+  unicode-bidi: isolate;
+  max-width: 100%;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.75rem 0.5rem;
+  margin: 0.75rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Rich Math Composer & Interactive Equation Chips */
+.math-rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.dark .math-rich-editor:empty::before {
+  color: #64748b;
+}
+
+.math-rich-editor .math-expression {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 3px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background-color: rgba(37, 99, 235, 0.09);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.math-rich-editor .math-expression:hover {
+  background-color: rgba(37, 99, 235, 0.16);
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+.dark .math-rich-editor .math-expression {
+  background-color: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.dark .math-rich-editor .math-expression:hover {
+  background-color: rgba(56, 189, 248, 0.22);
+}
+
+/* Clickable equations inside AI chat replies */
+.chat-math-interactive .math-clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 1px 3px;
+  transition: background-color 0.15s ease;
+}
+
+.chat-math-interactive .math-clickable:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.dark .chat-math-interactive .math-clickable:hover {
+  background-color: rgba(56, 189, 248, 0.14);
+}
+
+/* MathLive <math-field> styling */
+math-field {
+  font-size: 1.35rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.875rem;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  width: 100%;
+  min-height: 76px;
+  direction: ltr;
+  outline: none;
+  --caret-color: #2563eb;
+  --selection-background-color: rgba(37, 99, 235, 0.18);
+  --contains-highlight-background-color: rgba(37, 99, 235, 0.08);
+}
+
+math-field:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.dark math-field {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
+  --caret-color: #38bdf8;
+  --selection-background-color: rgba(56, 189, 248, 0.22);
+}
+
+.dark math-field:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18);
+}
+
+/* Ensure MathLive virtual keyboard stays above modals */
+.ML__keyboard {
+  z-index: 99999 !important;
+}
+

@@ -1,0 +1,19 @@
+node_modules/
+build/
+dist/
+dev-dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Android Studio / Gradle generated build artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
+android/captures/
+android/*.iml
+android/app/*.iml
