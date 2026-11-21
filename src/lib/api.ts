@@ -14,6 +14,15 @@ import {
   Unit,
   UserProfile,
 } from '../types';
+import {
+  auth,
+  loadProgressFromFirestore,
+  loadTutorStateFromFirestore,
+  logActivityToFirestore,
+  saveLessonProgressToFirestore,
+  saveTutorFavoriteToFirestore,
+  syncTutorChatToFirestore,
+} from './firebase';
 
 const TOKEN_KEY = 'syrian_math_auth_token';
 const ENV_API_BASE = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
@@ -78,7 +87,8 @@ export const api = {
     request<{
       ok: boolean;
       geminiConfigured: boolean;
-      supabaseConfigured: boolean;
+      firebaseConfigured: boolean;
+      firebaseProjectId: string;
       persistentStoreActive: boolean;
     }>('/api/health'),
 
@@ -171,14 +181,34 @@ export const api = {
       isGuestDemo: boolean;
     }>('/api/progress'),
 
-  recordLessonProgress: (lessonId: string, completed?: boolean) =>
-    request<{
+  recordLessonProgress: async (lessonId: string, completed?: boolean) => {
+    if (auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      await saveLessonProgressToFirestore(uid, {
+        lessonId,
+        gradeId: Number(localStorage.getItem('syrian_math_guest_grade')) || 10,
+        completed: Boolean(completed),
+        lastVisitedAt: new Date().toISOString(),
+      });
+      if (completed) {
+        await logActivityToFirestore(uid, {
+          type: 'lesson_view',
+          title: 'إتمام دراسة درس',
+          subtitle: `الدرس: ${lessonId}`,
+          gradeId: Number(localStorage.getItem('syrian_math_guest_grade')) || 10,
+        });
+      }
+      const fsData = await loadProgressFromFirestore(uid);
+      return { progress: fsData.progress, activities: fsData.activities };
+    }
+    return request<{
       progress?: StudentLessonProgress[];
       activities?: ActivityLog[];
     }>('/api/progress/lesson', {
       method: 'POST',
       body: JSON.stringify({ lessonId, completed }),
-    }),
+    });
+  },
 
   submitQuiz: (lessonId: string, answers: Record<string, number>) =>
     request<{
@@ -196,37 +226,69 @@ export const api = {
       body: JSON.stringify({ lessonId, answers }),
     }),
 
-  submitExamProgress: (payload: {
+  submitExamProgress: async (payload: {
     score: number;
     total: number;
     scopeLabel: string;
     gradeId: number;
     weakUnits?: string[];
-  }) =>
-    request<{ ok: boolean; guest?: boolean; activities?: ActivityLog[] }>(
+  }) => {
+    if (auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      await logActivityToFirestore(uid, {
+        type: 'quiz_submit',
+        title: `امتحان تجريبي: ${payload.scopeLabel}`,
+        subtitle: `النتيجة ${payload.score} / ${payload.total}`,
+        gradeId: payload.gradeId,
+      });
+      const fsData = await loadProgressFromFirestore(uid);
+      return { ok: true, activities: fsData.activities };
+    }
+    return request<{ ok: boolean; guest?: boolean; activities?: ActivityLog[] }>(
       '/api/progress/exam',
       {
         method: 'POST',
         body: JSON.stringify(payload),
       }
-    ),
+    );
+  },
 
-  getTutorState: () =>
-    request<{
+  getTutorState: async () => {
+    if (auth.currentUser) {
+      const fsTutor = await loadTutorStateFromFirestore(auth.currentUser.uid);
+      return {
+        authenticated: true,
+        chats: fsTutor.chats,
+        favorites: fsTutor.favorites,
+      };
+    }
+    return request<{
       authenticated: boolean;
       chats: SavedTutorChat[];
       favorites: SolvedFavoriteItem[];
-    }>('/api/tutor/state'),
+    }>('/api/tutor/state');
+  },
 
-  saveTutorState: (chats: SavedTutorChat[], favorites: SolvedFavoriteItem[]) =>
-    request<{
+  saveTutorState: async (chats: SavedTutorChat[], favorites: SolvedFavoriteItem[]) => {
+    if (auth.currentUser) {
+      const uid = auth.currentUser.uid;
+      for (const chat of chats.slice(0, 10)) {
+        await syncTutorChatToFirestore(uid, chat);
+      }
+      for (const fav of favorites.slice(0, 10)) {
+        await saveTutorFavoriteToFirestore(uid, fav);
+      }
+      return { ok: true, chats, favorites };
+    }
+    return request<{
       ok: boolean;
       chats: SavedTutorChat[];
       favorites: SolvedFavoriteItem[];
     }>('/api/tutor/state', {
       method: 'PUT',
       body: JSON.stringify({ chats, favorites }),
-    }),
+    });
+  },
 
   askTutor: (payload: {
     message: string;

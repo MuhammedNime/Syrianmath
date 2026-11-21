@@ -2,11 +2,10 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ main, master ]
   workflow_dispatch:
     inputs:
       api_base_url:
-        description: 'Backend API Base URL (e.g. https://your-app.run.app)'
+        description: 'Backend API Base URL (optional, e.g. https://your-app.run.app)'
         required: false
         default: ''
 
@@ -22,7 +21,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -30,8 +28,14 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install dependencies
-        run: npm ci
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Build web bundle & sync Capacitor Android
         env:
@@ -43,7 +47,7 @@ jobs:
 
       - name: Build Debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

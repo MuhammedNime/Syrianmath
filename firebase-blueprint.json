@@ -1,0 +1,270 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Publicly non-PII student profile stored per authenticated Firebase user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Student display name in Arabic or Latin script.",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "gradeId": {
+          "type": "integer",
+          "description": "Active Syrian curriculum grade (1-12)."
+        },
+        "role": {
+          "type": "string",
+          "description": "User access role.",
+          "enum": ["student", "admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp."
+        }
+      },
+      "required": ["uid", "displayName", "gradeId", "role", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII record containing user email address.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "LessonProgress": {
+      "title": "LessonProgress",
+      "description": "Per-lesson completion and quiz performance for a student.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "lessonId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "gradeId": {
+          "type": "integer"
+        },
+        "completed": {
+          "type": "boolean"
+        },
+        "quizScore": {
+          "type": "integer"
+        },
+        "quizTotal": {
+          "type": "integer"
+        },
+        "lastVisitedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "lessonId", "gradeId", "completed", "lastVisitedAt", "createdAt", "updatedAt"]
+    },
+    "StudentActivity": {
+      "title": "StudentActivity",
+      "description": "Recent student activity log entry.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["lesson_view", "quiz_submit", "tutor_chat", "tutor_question", "book_upload"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "subtitle": {
+          "type": "string",
+          "maxLength": 300
+        },
+        "gradeId": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "type", "title", "gradeId", "createdAt"]
+    },
+    "TutorChat": {
+      "title": "TutorChat",
+      "description": "Saved AI tutor conversation thread for a student.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "gradeId": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["solve", "explain", "graph", "grade_answer", "generate_practice", "deep_explain"]
+        },
+        "messages": {
+          "type": "array",
+          "description": "Bounded list of chat turn objects (max 100)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "title", "gradeId", "mode", "messages", "createdAt", "updatedAt"]
+    },
+    "TutorFavorite": {
+      "title": "TutorFavorite",
+      "description": "Saved favorite solution from the smart math tutor.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "answer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000
+        },
+        "gradeId": {
+          "type": "integer"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["solve", "explain", "graph", "grade_answer", "generate_practice", "deep_explain"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "question", "answer", "gradeId", "mode", "createdAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Database-backed administrator role marker.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Non-PII student profile document keyed by Firebase Auth UID."
+    },
+    "/users/{userId}/private/info": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII document containing user email."
+    },
+    "/users/{userId}/progress/{lessonId}": {
+      "schema": { "$ref": "#/entities/LessonProgress" },
+      "description": "Student lesson completion and quiz scores."
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/StudentActivity" },
+      "description": "Student recent activity history."
+    },
+    "/users/{userId}/tutorChats/{chatId}": {
+      "schema": { "$ref": "#/entities/TutorChat" },
+      "description": "Saved smart tutor conversations."
+    },
+    "/users/{userId}/tutorFavorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/TutorFavorite" },
+      "description": "Saved smart tutor favorite answers."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Trusted admin role registry."
+    }
+  }
+}

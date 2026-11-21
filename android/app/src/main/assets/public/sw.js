@@ -87,7 +87,7 @@ define(['./workbox-5d155c7a'], (function (workbox) { 'use strict';
     "revision": "6d06211c22eb93fc9d51ec3fe9ee918d"
   }, {
     "url": "index.html",
-    "revision": "5032212fcbc653aee821501bb128dbcc"
+    "revision": "caccce595ec4d792b2f5118ababb79ab"
   }, {
     "url": "icon.svg",
     "revision": "d7cb3139b296123f66b936fd7961aedb"
@@ -161,64 +161,64 @@ define(['./workbox-5d155c7a'], (function (workbox) { 'use strict';
     "url": "assets/workbox-window.prod.es5-Bd17z0YL.js",
     "revision": null
   }, {
-    "url": "assets/web-BL-9oJuF.js",
+    "url": "assets/web-BDrau63K.js",
     "revision": null
   }, {
-    "url": "assets/trash-2-CTj9VMKx.js",
+    "url": "assets/trash-2-DsM68lZX.js",
     "revision": null
   }, {
-    "url": "assets/sparkles-Bm6aYi1r.js",
+    "url": "assets/sparkles-C0W8gmBs.js",
     "revision": null
   }, {
-    "url": "assets/rotate-ccw-CiNmIi6z.js",
+    "url": "assets/rotate-ccw-CKV48W8h.js",
     "revision": null
   }, {
-    "url": "assets/refresh-cw-SiPo6hSz.js",
+    "url": "assets/refresh-cw-CWxNvHCU.js",
     "revision": null
   }, {
-    "url": "assets/plus-DHdELWoQ.js",
+    "url": "assets/plus-xE-BmUVR.js",
     "revision": null
   }, {
     "url": "assets/mathlive-DJ-knq2g.js",
     "revision": null
   }, {
-    "url": "assets/loader-circle-Gptyyhqz.js",
+    "url": "assets/loader-circle-B6PtI25-.js",
     "revision": null
   }, {
-    "url": "assets/index-D0vOOzb-.css",
+    "url": "assets/index-f1NaTMUj.css",
     "revision": null
   }, {
-    "url": "assets/index-CxapZAn2.js",
+    "url": "assets/index-RCxn9aWU.js",
     "revision": null
   }, {
-    "url": "assets/file-text-CdWGlF00.js",
+    "url": "assets/file-text-3ykBMftU.js",
     "revision": null
   }, {
-    "url": "assets/eraser-n3PkYwZ9.js",
+    "url": "assets/eraser-C8SUI6m-.js",
     "revision": null
   }, {
-    "url": "assets/circle-play-BMwvu0yg.js",
+    "url": "assets/circle-play-C9S7G-nG.js",
     "revision": null
   }, {
-    "url": "assets/chevron-up-DpDEhxpa.js",
+    "url": "assets/chevron-up-C75PUoRM.js",
     "revision": null
   }, {
-    "url": "assets/chevron-right-CPSgP74q.js",
+    "url": "assets/chevron-right-B6FSwb7E.js",
     "revision": null
   }, {
-    "url": "assets/SmartTutorView-qOcgvjho.js",
+    "url": "assets/SmartTutorView-DBLDGg-n.js",
     "revision": null
   }, {
-    "url": "assets/MathChartBlock-B-7iMsSF.js",
+    "url": "assets/MathChartBlock-B9MnsIQp.js",
     "revision": null
   }, {
-    "url": "assets/LiveMathModal-BNpaO6VN.js",
+    "url": "assets/LiveMathModal-7QD0UnkK.js",
     "revision": null
   }, {
-    "url": "assets/LibraryView-C8Gfe2sF.js",
+    "url": "assets/LibraryView-DFXSNtaO.js",
     "revision": null
   }, {
-    "url": "assets/LessonPage-CQNyPG4n.js",
+    "url": "assets/LessonPage-j4HeAlQJ.js",
     "revision": null
   }, {
     "url": "assets/KaTeX_Typewriter-Regular-CO6r4hn1.woff2",
@@ -338,19 +338,19 @@ define(['./workbox-5d155c7a'], (function (workbox) { 'use strict';
     "url": "assets/KaTeX_AMS-Regular-BQhdFMY1.woff2",
     "revision": null
   }, {
-    "url": "assets/GradesLessonsView-71xiB5K9.js",
+    "url": "assets/GradesLessonsView-TrJKvCg5.js",
     "revision": null
   }, {
-    "url": "assets/ExercisesQuizzesView-1mnxEjaL.js",
+    "url": "assets/ExercisesQuizzesView-DnkJSwJj.js",
     "revision": null
   }, {
-    "url": "assets/DrawingCanvasModal-JOjNn5AN.js",
+    "url": "assets/DrawingCanvasModal-Dj2E9cfk.js",
     "revision": null
   }, {
-    "url": "assets/CameraCaptureModal-CiOgucV8.js",
+    "url": "assets/CameraCaptureModal-B6-3WYLV.js",
     "revision": null
   }, {
-    "url": "assets/AdminConsoleView-ChsNu4ck.js",
+    "url": "assets/AdminConsoleView-BcdW3BSu.js",
     "revision": null
   }, {
     "url": "apple-touch-icon.png",

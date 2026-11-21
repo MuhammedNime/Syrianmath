@@ -368,10 +368,27 @@ export function registerUser(params: {
   return { user: sanitizeUser(newUser), token: createAuthToken(newUser) };
 }
 
-export function getSupabaseStatus() {
-  const configured = Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+export function getFirebaseStatus() {
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+  let firebaseConfigured = false;
+  let firebaseProjectId = '';
+  try {
+    if (fs.existsSync(configPath)) {
+      const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8')) as {
+        projectId?: string;
+        apiKey?: string;
+      };
+      firebaseProjectId = parsed.projectId || '';
+      firebaseConfigured = Boolean(
+        parsed.projectId && parsed.projectId !== 'remixed-project-id' && parsed.apiKey
+      );
+    }
+  } catch {
+    firebaseConfigured = false;
+  }
   return {
-    supabaseConfigured: configured,
+    firebaseConfigured,
+    firebaseProjectId,
     persistentStoreActive: true,
   };
 }

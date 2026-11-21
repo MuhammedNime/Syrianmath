@@ -18,8 +18,16 @@ import {
 import { AuthModal } from './components/AuthModal';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { AppRoute, HomeDashboard } from './components/HomeDashboard';
+import { onAuthStateChanged } from 'firebase/auth';
 import { OfflineIndicator, PWAInstallButton } from './components/PWAControls';
 import { api, EnrichedBook, GradeWithCounts, setStoredToken } from './lib/api';
+import {
+  auth,
+  ensureFirebaseUserProfile,
+  loadProgressFromFirestore,
+  signOutFirebase,
+  updateFirebaseUserGrade,
+} from './lib/firebase';
 import { registerAndroidBackHandler, syncStatusBarTheme } from './lib/native';
 
 const AdminConsoleView = lazy(() =>
@@ -158,6 +166,12 @@ export default function App() {
 
   const loadProgress = useCallback(async () => {
     try {
+      if (auth.currentUser) {
+        const fsRes = await loadProgressFromFirestore(auth.currentUser.uid);
+        setProgress(fsRes.progress);
+        setActivities(fsRes.activities);
+        return;
+      }
       const res = await api.getProgress();
       setProgress(res.progress);
       setActivities(res.activities);
@@ -192,7 +206,7 @@ export default function App() {
       try {
         const [meRes, gradesRes] = await Promise.all([api.me(), api.getGrades()]);
         setGrades(gradesRes.grades);
-        if (meRes.user) {
+        if (meRes.user && !auth.currentUser) {
           setUser(meRes.user);
           setSelectedGradeId(meRes.user.gradeId);
         }
@@ -202,6 +216,22 @@ export default function App() {
       await loadProgress();
     }
     bootstrap();
+  }, [loadProgress]);
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        try {
+          const profile = await ensureFirebaseUserProfile(fbUser);
+          setUser(profile);
+          setSelectedGradeId(profile.gradeId);
+          await loadProgress();
+        } catch {
+          // Handled via Firebase error handler
+        }
+      }
+    });
+    return () => unsub();
   }, [loadProgress]);
 
   useEffect(() => {
@@ -225,9 +255,15 @@ export default function App() {
 
   async function handleUpdateRegisteredGrade(gradeId: number) {
     if (user) {
-      const res = await api.updateGrade(gradeId);
-      setUser(res.user);
-      setSelectedGradeId(res.user.gradeId);
+      if (auth.currentUser && auth.currentUser.uid === user.id) {
+        await updateFirebaseUserGrade(auth.currentUser.uid, gradeId);
+        setUser({ ...user, gradeId });
+        setSelectedGradeId(gradeId);
+      } else {
+        const res = await api.updateGrade(gradeId);
+        setUser(res.user);
+        setSelectedGradeId(res.user.gradeId);
+      }
       await loadProgress();
     } else {
       handleSelectStudyGrade(gradeId);
@@ -294,7 +330,9 @@ export default function App() {
   function handleLogout() {
     setStoredToken(null);
     setUser(null);
-    loadProgress();
+    void signOutFirebase().finally(() => {
+      void loadProgress();
+    });
   }
 
   const navItems: Array<{

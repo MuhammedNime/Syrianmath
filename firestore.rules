@@ -1,0 +1,315 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ---- Shared Security Primitives ----
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isVerified() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'muhammedcemal.nime@gmail.com'
+      );
+    }
+
+    function userExistsOrCreating(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) ||
+        existsAfter(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function userExists(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId));
+    }
+
+    function isValidGrade(g) {
+      return g is int && g >= 1 && g <= 12;
+    }
+
+    function isValidTutorMode(m) {
+      return m is string && m.size() >= 4 && m.size() <= 24 && m in ['solve', 'explain', 'graph', 'grade_answer', 'generate_practice', 'deep_explain'];
+    }
+
+    // ---- Entity Validation Helpers ----
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'gradeId', 'role', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'gradeId', 'role', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && isValidGrade(data.gradeId)
+        && data.role is string && data.role.size() >= 5 && data.role.size() <= 10 && data.role in ['student', 'admin']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == userId
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidLessonProgress(data, userId, lessonId) {
+      return data.keys().hasAll(['userId', 'lessonId', 'gradeId', 'completed', 'lastVisitedAt', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'lessonId', 'gradeId', 'completed', 'quizScore', 'quizTotal', 'lastVisitedAt', 'createdAt', 'updatedAt'])
+        && isValidId(data.userId) && data.userId == userId
+        && isValidId(data.lessonId) && data.lessonId == lessonId
+        && isValidGrade(data.gradeId)
+        && data.completed is bool
+        && (!('quizScore' in data) || (data.quizScore is int && data.quizScore >= 0 && data.quizScore <= 500))
+        && (!('quizTotal' in data) || (data.quizTotal is int && data.quizTotal >= 0 && data.quizTotal <= 500))
+        && data.lastVisitedAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStudentActivity(data, userId) {
+      return data.keys().hasAll(['userId', 'type', 'title', 'gradeId', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'type', 'title', 'subtitle', 'gradeId', 'createdAt'])
+        && isValidId(data.userId) && data.userId == userId
+        && data.type is string && data.type.size() >= 4 && data.type.size() <= 24
+        && data.type in ['lesson_view', 'quiz_submit', 'tutor_chat', 'tutor_question', 'book_upload']
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && (!('subtitle' in data) || (data.subtitle is string && data.subtitle.size() <= 300))
+        && isValidGrade(data.gradeId)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidTutorChat(data, userId) {
+      return data.keys().hasAll(['userId', 'title', 'gradeId', 'mode', 'messages', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'title', 'gradeId', 'mode', 'messages', 'createdAt', 'updatedAt'])
+        && isValidId(data.userId) && data.userId == userId
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && isValidGrade(data.gradeId)
+        && isValidTutorMode(data.mode)
+        && data.messages is list && data.messages.size() >= 1 && data.messages.size() <= 100
+        && data.messages[0] is map
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTutorFavorite(data, userId) {
+      return data.keys().hasAll(['userId', 'question', 'answer', 'gradeId', 'mode', 'createdAt'])
+        && data.keys().hasOnly(['userId', 'question', 'answer', 'gradeId', 'mode', 'createdAt'])
+        && isValidId(data.userId) && data.userId == userId
+        && data.question is string && data.question.size() >= 1 && data.question.size() <= 2000
+        && data.answer is string && data.answer.size() >= 1 && data.answer.size() <= 20000
+        && isValidGrade(data.gradeId)
+        && isValidTutorMode(data.mode)
+        && data.createdAt is timestamp;
+    }
+
+    function isValidAdminRecord(data, userId) {
+      return data.keys().hasAll(['uid', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'createdAt'])
+        && isValidId(data.uid) && data.uid == userId
+        && data.createdAt is timestamp;
+    }
+
+    // ---- Collection Rules ----
+
+    // Connection health check (authenticated only, no open public read)
+    match /test/connection {
+      allow get: if isSignedIn();
+    }
+
+    // Trusted admin registry
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow create: if isValidId(userId)
+        && isAdmin()
+        && isValidAdminRecord(incoming(), userId)
+        && incoming().createdAt == request.time;
+      allow update, delete: if isValidId(userId) && isAdmin();
+    }
+
+    // Non-PII user profiles
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+
+      allow create: if isValidId(userId)
+        && isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (incoming().role == 'student' || isAdmin());
+
+      allow update: if isValidId(userId)
+        && isVerified()
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() ||
+          (
+            isOwner(userId)
+            && incoming().role == existing().role
+            && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'gradeId', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(userId) && isAdmin();
+
+      // Split PII subcollection
+      match /private/{docId} {
+        allow get: if isValidId(userId) && docId == 'info' && (isOwner(userId) || isAdmin());
+
+        allow create: if isValidId(userId)
+          && docId == 'info'
+          && isVerifiedOwner(userId)
+          && userExistsOrCreating(userId)
+          && isValidUserPrivateInfo(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+
+        allow update: if isValidId(userId)
+          && docId == 'info'
+          && isVerified()
+          && userExists(userId)
+          && isValidUserPrivateInfo(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            isAdmin() ||
+            (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt']))
+          );
+
+        allow delete: if isValidId(userId) && docId == 'info' && isAdmin();
+      }
+
+      // Per-lesson student progress
+      match /progress/{lessonId} {
+        allow get: if isValidId(userId) && isValidId(lessonId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(lessonId)
+          && isVerifiedOwner(userId)
+          && userExists(userId)
+          && isValidLessonProgress(incoming(), userId, lessonId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+
+        allow update: if isValidId(userId)
+          && isValidId(lessonId)
+          && isVerified()
+          && userExists(userId)
+          && isValidLessonProgress(incoming(), userId, lessonId)
+          && incoming().userId == existing().userId
+          && incoming().lessonId == existing().lessonId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            isAdmin() ||
+            (
+              isOwner(userId)
+              && incoming().diff(existing()).affectedKeys().hasOnly(['gradeId', 'completed', 'quizScore', 'quizTotal', 'lastVisitedAt', 'updatedAt'])
+            )
+          );
+
+        allow delete: if isValidId(userId) && isValidId(lessonId) && (isVerifiedOwner(userId) || isAdmin());
+      }
+
+      // Recent student activities
+      match /activities/{activityId} {
+        allow get: if isValidId(userId) && isValidId(activityId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(activityId)
+          && isVerifiedOwner(userId)
+          && userExists(userId)
+          && isValidStudentActivity(incoming(), userId)
+          && incoming().createdAt == request.time;
+
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(activityId) && (isVerifiedOwner(userId) || isAdmin());
+      }
+
+      // Saved AI Tutor conversations
+      match /tutorChats/{chatId} {
+        allow get: if isValidId(userId) && isValidId(chatId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(chatId)
+          && isVerifiedOwner(userId)
+          && userExists(userId)
+          && isValidTutorChat(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+
+        allow update: if isValidId(userId)
+          && isValidId(chatId)
+          && isVerified()
+          && userExists(userId)
+          && isValidTutorChat(incoming(), userId)
+          && incoming().userId == existing().userId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && (
+            isAdmin() ||
+            (
+              isOwner(userId)
+              && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'gradeId', 'mode', 'messages', 'updatedAt'])
+            )
+          );
+
+        allow delete: if isValidId(userId) && isValidId(chatId) && (isVerifiedOwner(userId) || isAdmin());
+      }
+
+      // Saved favorite tutor solutions
+      match /tutorFavorites/{favoriteId} {
+        allow get: if isValidId(userId) && isValidId(favoriteId) && (isOwner(userId) || isAdmin());
+        allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidId(favoriteId)
+          && isVerifiedOwner(userId)
+          && userExists(userId)
+          && isValidTutorFavorite(incoming(), userId)
+          && incoming().createdAt == request.time;
+
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(favoriteId) && (isVerifiedOwner(userId) || isAdmin());
+      }
+    }
+  }
+}

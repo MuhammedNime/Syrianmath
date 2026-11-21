@@ -9,7 +9,7 @@ import { createServer as createViteServer } from 'vite';
 import {
   createAuthToken,
   getDb,
-  getSupabaseStatus,
+  getFirebaseStatus,
   recordActivity,
   registerUser,
   sanitizeUser,
@@ -147,7 +147,7 @@ async function startServer() {
       geminiConfigured: Boolean(
         process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'
       ),
-      ...getSupabaseStatus(),
+      ...getFirebaseStatus(),
     });
   });
 
